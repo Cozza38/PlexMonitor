@@ -5,7 +5,6 @@ function getPlexToken()
     global $plexToken;
     global $plex_username;
     global $plex_password;
-    echo 'fuck shit';
 
     if (!empty($plex_username) && !empty($plex_password)) {
 
