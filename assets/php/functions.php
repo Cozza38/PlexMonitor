@@ -4,6 +4,7 @@ $config_path = '../../config.ini'; //path to config file, recommend you place it
 
 Ini_Set('display_errors', false);
 include '../../init.php';
+
 include 'lib/phpseclib0.3.5/Net/SSH2.php';
 $config = parse_ini_file($config_path, true);
 $network = $config['network'];
@@ -54,6 +55,8 @@ $disk = $disks;
 $plexTokenCache = ROOT_DIR . '/assets/caches/plex_token.txt';
 // Check to see if the plex token exists and is younger than one week
 // if not grab it and write it to our caches folder
+
+include ROOT_DIR . '/assets/php/plex.php';
 if (file_exists($plexTokenCache) && (filemtime($plexTokenCache) > (time() - 60 * 60 * 24 * 7))) {
     $plexToken = file_get_contents(ROOT_DIR . '/assets/caches/plex_token.txt');
 } else {
@@ -784,15 +787,15 @@ function printBandwidthBar($percent, $name = "", $Mbps)
     echo '</div>';
 }
 
-function getPlexToken()
-{
-    global $plex_username;
-    global $plex_password;
-    $myPlex = shell_exec('curl -H "Content-Length: 0" -H "X-Plex-Client-Identifier: my-app" -u "' . $plex_username . '"":""' . $plex_password . '" -X POST https://my.plexapp.com/users/sign_in.xml 2> /dev/null');
-    $myPlex_xml = simplexml_load_string($myPlex);
-    $token = $myPlex_xml['authenticationToken'];
-    return $token;
-}
+//function getPlexToken()
+//{
+//    global $plex_username;
+//    global $plex_password;
+//    $myPlex = shell_exec('curl -H "Content-Length: 0" -H "X-Plex-Client-Identifier: my-app" -u "' . $plex_username . '"":""' . $plex_password . '" -X POST https://my.plexapp.com/users/sign_in.xml 2> /dev/null');
+//    $myPlex_xml = simplexml_load_string($myPlex);
+//    $token = $myPlex_xml['authenticationToken'];
+//    return $token;
+//}
 
 function countWords($string)
 {
