@@ -42,7 +42,6 @@ function getPlexToken()
         } else {
             $xml = simplexml_load_string($data);
             $plexToken = $xml['authenticationToken'];
-            echo($plexToken);
             if (empty($plexToken)) {
                 $errorCode = "Error: Could not parse Plex.tv XML to retrieve authentication code.";
                 curl_close($process);

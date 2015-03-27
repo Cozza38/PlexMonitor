@@ -18,7 +18,7 @@ global $wan2_ip;
 global $ping_ip;
 
 echo '<div class="exolight">';
-echo 'WAN1 Ping: '.getping($wan1_ip,$ping_ip).' ms';
+echo 'WAN1 Ping: '.getPing($ping_ip).' ms';
 echo '<br>';
 echo '';
 echo '<br>';

@@ -22,32 +22,35 @@ $apcupsd_server_ip = $network['apcupsd_server_ip'];
 $apcupsd_username = $network['apcupsd_username'];
 $apcupsd_password = $network['apcupsd_password'];
 $wan_domain = $network['wan_domain'];
-$wan1_ip = $network['wan1_ip'];
-$wan2_ip = $network['wan2_ip'];
-$ping_ip = $network['ping_ip'];
 $plex_server_ip = $network['plex_server_ip'];
 $plex_port = $network['plex_port'];
+
 // Credentials
 $pfSense_username = $credentials['pfSense_username'];
 $pfSense_password = $credentials['pfSense_password'];
 $plex_username = $credentials['plex_username'];
 $plex_password = $credentials['plex_password'];
 $trakt_username = $credentials['trakt_username'];
+
 // API Keys
 $forecast_api = $api_keys['forecast_api'];
 $sabnzbd_api = $api_keys['sabnzbd_api'];
+
 // SABnzbd+
 $sab_ip = $sabnzbd['sab_ip'];
 $sab_port = $sabnzbd['sab_port'];
 $ping_throttle = $sabnzbd['ping_throttle'];
 $sabSpeedLimitMax = $sabnzbd['sabSpeedLimitMax'];
 $sabSpeedLimitMin = $sabnzbd['sabSpeedLimitMin'];
+
 // Misc
 $cpu_cores = $misc['cpu_cores'];
 $weather_always_display = $misc['weather_always_display'];
 $weather_lat = $misc['weather_lat'];
 $weather_long = $misc['weather_long'];
 $weather_name = $misc['weather_name'];
+$ping_ip = $misc['ping_ip'];
+
 // Disks
 $disk = $disks;
 
@@ -126,18 +129,6 @@ function isNix()
     return false;
 }
 
-// This is if you want to get a % of cpu usage in real time instead of load.
-// After using it for a week I determined that it gave me a lot less information than load does.
-function getCpuUsage()
-{
-    $top = shell_exec('top -l 1 -n 0');
-    $findme = 'idle';
-    $cpuIdleStart = strpos($top, $findme);
-    $cpuIdle = substr($top, ($cpuIdleStart - 7), 2);
-    $cpuUsage = 100 - $cpuIdle;
-    return $cpuUsage;
-}
-
 function makeUpsBars()
 {
     printBar(findUpsValue('LOADPCT'), 'Load');
@@ -166,11 +157,6 @@ function findUpsValue($valToFind)
         }
     }
     return array(0, 0);
-}
-
-function makeCpuBars()
-{
-    printBar(getCpuUsage(), "Usage");
 }
 
 function makeTotalDiskSpace()
@@ -241,11 +227,6 @@ function makeDiskBars()
     }
 }
 
-function makeRamBars()
-{
-    printRamBar(getFreeRam()[0], getFreeRam()[1], getFreeRam()[2], getFreeRam()[3]);
-}
-
 function makeLoadBars()
 {
     if (isWin()) {
@@ -256,24 +237,6 @@ function makeLoadBars()
         printBar(getLoad(1), "5 min");
         printBar(getLoad(2), "15 min");
     }
-}
-
-function getFreeRam()
-{
-    // This is very customized to OS X, if using another OS you'll have to roll your own
-    // This will output exactly what activity monitor in 10.9 reports as Memory Used
-    // And while this works very well I disabled it because it's almost
-    // meaningless to keep track of in OS X. What I care more about is Swap Used.
-    $top = shell_exec('top -l 1 -n 0');
-    $find_str_1 = 'unused.';
-    $unusedStart = strpos($top, $find_str_1);
-    // Grab the unused ram amount
-    $unusedRam = trim(substr($top, ($unusedStart - 6), 4)) / 1024; // GB
-    // What is the total ram in the computer
-    $totalRam = (substr(shell_exec('sysctl hw.memsize'), 12)) / 1024 / 1024 / 1024; // GB
-    // Find the amount of used ram
-    $usedRam = $totalRam - $unusedRam; // Find how much ram is used in GB.
-    return array(sprintf('%.0f', ($usedRam / $totalRam) * 100), 'Used Ram', $usedRam, $totalRam);
 }
 
 function getDiskspace($dir)
