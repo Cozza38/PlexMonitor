@@ -14,11 +14,12 @@ $plexSessionXML = simplexml_load_file($network . ':' . $plex_port . '/status/ses
 	// See if Plex Media Server is online and how many people are watching.
 	if (!$plexSessionXML):
 		// If Plex Media Server is offline.
-		$title = 'Recently Viewed';
+		// TODO clean this up $title = 'Recently Viewed';
+    $title = 'Plex Offline';
 	else:
 		// If Plex Media Server is online.
 		if (count($plexSessionXML->Video) == 0):
-			$title = 'Recently Released';
+			$title = 'Recently Added';
 		else:
 			$title = 'Now Playing';
 		endif;

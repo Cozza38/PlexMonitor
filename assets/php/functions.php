@@ -143,6 +143,25 @@ function isLocal($ipAddress)
     }
 }
 
+function showDiv($div)
+{
+    global $apcupsd_server_ip;
+    global $local_pfsense_ip;
+
+    switch ($div) {
+        case 'ups':
+            if ($apcupsd_server_ip === false) {
+                echo "style=\"display: none;\"";
+            }
+        case 'services':
+            break;
+        case 'bandwidth':
+            if ($local_pfsense_ip == null) {
+                echo "style=\"display: none;\"";
+            }
+    }
+}
+
 function makeUpsBars()
 {
     printBar(findUpsValue('LOADPCT'), 'Load');
@@ -796,7 +815,7 @@ function getPing($destinationIP)
     global $pfSense_username;
     global $pfSense_password;
 
-    if(isLocal($local_pfsense_ip)) {
+    if (isLocal($local_pfsense_ip)) {
         $terminal_output = shell_exec('ping -c 5 -q ' . $destinationIP);
     } else {
         $ssh = new Net_SSH2($local_pfsense_ip);

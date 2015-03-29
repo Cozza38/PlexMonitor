@@ -4,6 +4,7 @@ Error_Reporting(E_ALL | E_STRICT);
 Ini_Set('display_errors', true);
 
 include 'init.php';
+include 'assets/php/functions.php';
 include ROOT_DIR . '/assets/php/Mobile_Detect.php';
 
 $detect = new Mobile_Detect;
@@ -143,7 +144,7 @@ $detect = new Mobile_Detect;
                         </div>
                     </div>
                     <!-- Bandwidth -->
-                    <div class="panel panel-default">
+                    <div class="panel panel-default" <?php showDiv('bandwidth')?>>
                         <div class="panel-heading">
                             <h4 class="panel-title exoextralight">
                                 Bandwidth
@@ -154,7 +155,7 @@ $detect = new Mobile_Detect;
                         </div>
                     </div>
                     <!-- Services -->
-                    <div class="panel panel-default">
+                    <div class="panel panel-default" <?php showDiv('services')?>>
                         <div class="panel-heading">
                             <h4 class="panel-title exoextralight">
                                 Services
@@ -211,7 +212,7 @@ $detect = new Mobile_Detect;
                     </div>
                 </div>
                 <!-- UPS Panel -->
-                <div class="panel panel-default">
+                <div class="panel panel-default" <?php showDiv('ups')?> >
                     <div class="panel-heading">
                         <h4 class="panel-title exoextralight">
                             UPS
