@@ -754,13 +754,17 @@ function getBandwidth($interface)
     global $local_pfsense_ip;
     global $pfSense_username;
     global $pfSense_password;
-    $ssh = new Net_SSH2($local_pfsense_ip);
-    if (!$ssh->login($pfSense_username, $pfSense_password)) {
-        //exit('Login Failed');
-        return array(0, 0);
-    }
+    if (isLocal($local_pfsense_ip)) {
+        $dump = shell_exec('vnstat -i ' . $interface . ' -tr');
+    } else {
+        $ssh = new Net_SSH2($local_pfsense_ip);
+        if (!$ssh->login($pfSense_username, $pfSense_password)) {
+            //exit('Login Failed');
+            return array(0, 0);
+        }
 
-    $dump = $ssh->exec('vnstat -i ' . $interface . ' -tr');
+        $dump = $ssh->exec('vnstat -i ' . $interface . ' -tr');
+    }
     $output = preg_split('/[,;| \s]/', $dump);
     for ($i = count($output) - 1; $i >= 0; $i--) {
         if ($output[$i] == '') unset ($output[$i]);
@@ -792,12 +796,16 @@ function getPing($destinationIP)
     global $pfSense_username;
     global $pfSense_password;
 
-    $ssh = new Net_SSH2($local_pfsense_ip);
-    if (!$ssh->login($pfSense_username, $pfSense_password)) {
-        //exit('Login Failed');
-        return array(0, 0);
+    if(isLocal($local_pfsense_ip)) {
+        $terminal_output = shell_exec('ping -c 5 -q ' . $destinationIP);
+    } else {
+        $ssh = new Net_SSH2($local_pfsense_ip);
+        if (!$ssh->login($pfSense_username, $pfSense_password)) {
+            //exit('Login Failed');
+            return array(0, 0);
+        }
+        $terminal_output = $ssh->exec('ping -c 5 -q ' . $destinationIP);
     }
-    $terminal_output = $ssh->exec('ping -c 5 -q ' . $destinationIP);
     // If using something besides OS X you might want to customize the following variables for proper output of average ping.
     $findme_start = '= ';
     $start = strpos($terminal_output, $findme_start);
