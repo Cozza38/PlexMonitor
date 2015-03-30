@@ -1,6 +1,6 @@
 <?php
 
-$config_path = '../../config.ini'; //path to config file, recommend you place it outside of web root
+$config_path = ROOT_DIR . '/config.ini'; //path to config file, recommend you place it outside of web root
 
 Ini_Set('display_errors', false);
 include '../../init.php';
@@ -150,13 +150,13 @@ function showDiv($div)
 
     switch ($div) {
         case 'ups':
-            if ($apcupsd_server_ip === false) {
+            if (empty($apcupsd_server_ip)) {
                 echo "style=\"display: none;\"";
             }
         case 'services':
             break;
         case 'bandwidth':
-            if ($local_pfsense_ip == null) {
+            if (empty($local_pfsense_ip)) {
                 echo "style=\"display: none;\"";
             }
     }

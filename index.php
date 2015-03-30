@@ -4,7 +4,7 @@ Error_Reporting(E_ALL | E_STRICT);
 Ini_Set('display_errors', true);
 
 include 'init.php';
-include 'assets/php/functions.php';
+include ROOT_DIR . '/assets/php/functions.php';
 include ROOT_DIR . '/assets/php/Mobile_Detect.php';
 
 $detect = new Mobile_Detect;
