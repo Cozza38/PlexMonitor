@@ -1,6 +1,6 @@
 <?php
 
-$config_path = '../../config.ini'; //path to config file, recommend you place it outside of web root
+$config_path = ROOT_DIR . '/config.ini'; //path to config file, recommend you place it outside of web root
 
 Ini_Set('display_errors', false);
 include '../../init.php';
@@ -50,6 +50,7 @@ $weather_lat = $misc['weather_lat'];
 $weather_long = $misc['weather_long'];
 $weather_name = $misc['weather_name'];
 $ping_ip = $misc['ping_ip'];
+$apcupsd_path = $misc['apcupsd_path_to_bin'];
 
 // Disks
 $disk = $disks;
@@ -129,6 +130,38 @@ function isNix()
     return false;
 }
 
+function isLocal($ipAddress)
+{
+    if ($ipAddress == 'localhost') {
+        return true;
+    } else if ($ipAddress == '127.0.0.1') {
+        return true;
+    } else if ($ipAddress == $_SERVER['SERVER_ADDR']) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function showDiv($div)
+{
+    global $apcupsd_server_ip;
+    global $local_pfsense_ip;
+
+    switch ($div) {
+        case 'ups':
+            if (empty($apcupsd_server_ip)) {
+                echo "style=\"display: none;\"";
+            }
+        case 'services':
+            break;
+        case 'bandwidth':
+            if (empty($local_pfsense_ip)) {
+                echo "style=\"display: none;\"";
+            }
+    }
+}
+
 function makeUpsBars()
 {
     printBar(findUpsValue('LOADPCT'), 'Load');
@@ -140,14 +173,22 @@ function findUpsValue($valToFind)
     global $apcupsd_username;
     global $apcupsd_password;
     global $apcupsd_server_ip;
+    global $apcupsd_path;
 
-    $ssh = new Net_SSH2($apcupsd_server_ip);
-    if (!$ssh->login($apcupsd_username, $apcupsd_password)) {
-        //exit('Login Failed');
-        return array(0, 0);
+    if (isLocal($apcupsd_server_ip)) {
+        if (isWin()) {
+            $dump = shell_exec($apcupsd_path . '\apcaccess.exe -u');
+        } else {
+            $dump = shell_exec('apcaccess -u');
+        }
+    } else {
+        $ssh = new Net_SSH2($apcupsd_server_ip);
+        if (!$ssh->login($apcupsd_username, $apcupsd_password)) {
+            //exit('Login Failed');
+            return array(0, 0);
+        }
+        $dump = $ssh->exec('apcaccess -u');
     }
-
-    $dump = $ssh->exec('apcaccess -u');
     $output = preg_split('/[\n]/', $dump);
     foreach ($output as $item) {
         $checkFor = strpos($item, $valToFind);
@@ -510,6 +551,58 @@ function makeRecenlyReleased()
     echo '</div>'; // Close column div
 }
 
+function makeRecentlyAdded()
+{
+    // Various items are commented out as I was playing with what information to include.
+    global $plex_port;
+    global $plexToken;
+    $network = getNetwork();
+    $clientIP = get_client_ip();
+    $plexNewestXML = simplexml_load_file($network . ':' . $plex_port . '/library/recentlyAdded/?X-Plex-Token=' . $plexToken);
+
+    //echo '<div class="col-md-10 col-sm-offset-1">';
+    echo '<div class="col-md-12">';
+    echo '<div id="carousel-example-generic" class=" carousel slide">';
+    echo '<div class="thumbnail">';
+    echo '<!-- Wrapper for slides -->';
+    echo '<div class="carousel-inner">';
+    echo '<div class="item active">';
+    $mediaKey = $plexNewestXML->Video[0]['key'];
+    $mediaXML = simplexml_load_file($network . ':' . $plex_port . $mediaKey . '/?X-Plex-Token=' . $plexToken);
+    $movieTitle = $mediaXML->Video['title'];
+    $movieArt = $mediaXML->Video['thumb'];
+    echo '<img src="' . ($network . ':' . $plex_port . $movieArt . '/?X-Plex-Token=' . $plexToken) . '" alt="' . $movieTitle . '">';
+    echo '</div>'; // Close item div
+    $i = 1;
+    for (; ;) {
+        if ($i == 15) break;
+        $mediaKey = $plexNewestXML->Video[$i]['key'];
+        $mediaXML = simplexml_load_file($network . ':' . $plex_port . $mediaKey . '/?X-Plex-Token=' . $plexToken);
+        $movieTitle = $mediaXML->Video['title'];
+        $movieArt = $mediaXML->Video['thumb'];
+        $movieYear = $mediaXML->Video['year'];
+        echo '<div class="item">';
+        echo '<img src="' . ($network . ':' . $plex_port . $movieArt . '/?X-Plex-Token=' . $plexToken) . '" alt="' . $movieTitle . '">';
+        //echo '<div class="carousel-caption">';
+        //echo '<h3>'.$movieTitle.$movieYear.'</h3>';
+        //echo '<p>Summary</p>';
+        //echo '</div>';
+        echo '</div>'; // Close item div
+        $i++;
+    }
+    echo '</div>'; // Close carousel-inner div
+    echo '</div>'; // Close thumbnail div
+    echo '<!-- Controls -->';
+    echo '<a class="left carousel-control" href="#carousel-example-generic" data-slide="prev">';
+    //echo '<span class="glyphicon glyphicon-chevron-left"></span>';
+    echo '</a>';
+    echo '<a class="right carousel-control" href="#carousel-example-generic" data-slide="next">';
+    //echo '<span class="glyphicon glyphicon-chevron-right"></span>';
+    echo '</a>';
+    echo '</div>'; // Close carousel slide div
+    echo '</div>'; // Close column div
+}
+
 function makeNowPlaying()
 {
     global $plex_port;
@@ -520,7 +613,8 @@ function makeNowPlaying()
     if (!$plexSessionXML):
         makeRecenlyViewed();
     elseif (count($plexSessionXML->Video) == 0):
-        makeRecenlyReleased();
+        // TODO clean this up makeRecenlyReleased();
+        makeRecentlyAdded();
     else:
         $i = 0; // Initiate and assign a value to i & t
         $t = 0; // T is the total amount of sessions
@@ -679,13 +773,17 @@ function getBandwidth($interface)
     global $local_pfsense_ip;
     global $pfSense_username;
     global $pfSense_password;
-    $ssh = new Net_SSH2($local_pfsense_ip);
-    if (!$ssh->login($pfSense_username, $pfSense_password)) {
-        //exit('Login Failed');
-        return array(0, 0);
-    }
+    if (isLocal($local_pfsense_ip)) {
+        $dump = shell_exec('vnstat -i ' . $interface . ' -tr');
+    } else {
+        $ssh = new Net_SSH2($local_pfsense_ip);
+        if (!$ssh->login($pfSense_username, $pfSense_password)) {
+            //exit('Login Failed');
+            return array(0, 0);
+        }
 
-    $dump = $ssh->exec('vnstat -i ' . $interface . ' -tr');
+        $dump = $ssh->exec('vnstat -i ' . $interface . ' -tr');
+    }
     $output = preg_split('/[,;| \s]/', $dump);
     for ($i = count($output) - 1; $i >= 0; $i--) {
         if ($output[$i] == '') unset ($output[$i]);
@@ -717,12 +815,16 @@ function getPing($destinationIP)
     global $pfSense_username;
     global $pfSense_password;
 
-    $ssh = new Net_SSH2($local_pfsense_ip);
-    if (!$ssh->login($pfSense_username, $pfSense_password)) {
-        //exit('Login Failed');
-        return array(0, 0);
+    if (isLocal($local_pfsense_ip)) {
+        $terminal_output = shell_exec('ping -c 5 -q ' . $destinationIP);
+    } else {
+        $ssh = new Net_SSH2($local_pfsense_ip);
+        if (!$ssh->login($pfSense_username, $pfSense_password)) {
+            //exit('Login Failed');
+            return array(0, 0);
+        }
+        $terminal_output = $ssh->exec('ping -c 5 -q ' . $destinationIP);
     }
-    $terminal_output = $ssh->exec('ping -c 5 -q ' . $destinationIP);
     // If using something besides OS X you might want to customize the following variables for proper output of average ping.
     $findme_start = '= ';
     $start = strpos($terminal_output, $findme_start);
