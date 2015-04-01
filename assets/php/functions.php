@@ -209,7 +209,7 @@ function makeTotalDiskSpace()
 
     foreach ($disks as $disk) {
         $disk = preg_split('/,/', $disk);
-        $du += disk_free_space($disk[0]);
+        $du += disk_total_space($disk[0]) - disk_free_space($disk[0]);
         $dts += disk_total_space($disk[0]);
     }
     $dfree = $dts - $du;
