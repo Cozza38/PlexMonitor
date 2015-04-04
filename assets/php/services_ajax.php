@@ -29,7 +29,7 @@ $s = array(
 	//new service("pfSense", 8082, "http://d4rk.co:8082", "d4rk.co"),
 //	new serviceSAB($sabTitle, 8080, "http://d4rk.co:8080", "10.0.1.5"),
 //	new service("SickBeard", 8081, "http://d4rk.co:8081", "10.0.1.3"),
-	new service("CouchPotato", 50540, "192.168.1.3", "192.168.1.3"),
+//	new service("CouchPotato", 50540, "192.168.1.3", "192.168.1.3"),
 //	new service("Transmission", 9091, "http://d4rk.co:9091", "10.0.1.5"),
 //	new service("iTunes Server", 3689, "http://www.apple.com/itunes/"),
 	//new service("Starbound Server", 21025, "http://playstarbound.com"),
