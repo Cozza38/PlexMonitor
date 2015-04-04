@@ -1,4 +1,4 @@
-PlexMonitor - 0.2.0alpha
+PlexMonitor - 0.2.1alpha
 ===================
 
 Designed to monitor a local server and network with forecast.io, Plex, and pfSense integration.
