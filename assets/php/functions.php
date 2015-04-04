@@ -2,7 +2,7 @@
 
 $config_path = ROOT_DIR . '/config.ini'; //path to config file, recommend you place it outside of web root
 
-Ini_Set('display_errors', false);
+Ini_Set('display_errors', true);
 include '../../init.php';
 
 include 'lib/phpseclib0.3.5/Net/SSH2.php';
@@ -54,6 +54,9 @@ $apcupsd_path = $misc['apcupsd_path_to_bin'];
 
 // Disks
 $disk = $disks;
+
+//Services
+$services = $config['services'];
 
 // Set the path for the Plex Token
 $plexTokenCache = ROOT_DIR . '/assets/caches/plex_token.txt';
@@ -209,7 +212,7 @@ function makeTotalDiskSpace()
 
     foreach ($disks as $disk) {
         $disk = preg_split('/,/', $disk);
-        $du += disk_free_space($disk[0]);
+        $du += disk_total_space($disk[0]) - disk_free_space($disk[0]);
         $dts += disk_total_space($disk[0]);
     }
     $dfree = $dts - $du;
