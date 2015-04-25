@@ -49,6 +49,7 @@ $weather_always_display = $misc['weather_always_display'];
 $weather_lat = $misc['weather_lat'];
 $weather_long = $misc['weather_long'];
 $weather_name = $misc['weather_name'];
+$weather_units = $misc['weather_units'];
 $ping_ip = $misc['ping_ip'];
 $apcupsd_path = $misc['apcupsd_path_to_bin'];
 
@@ -888,8 +889,10 @@ function makeWeatherSidebar()
     global $forecast_api;
     global $weather_lat;
     global $weather_long;
+    global $weather_units;
+    
     $forecastExcludes = '?exclude=flags'; // Take a look at https://developer.forecast.io/docs/v2 to configure your weather information.
-    $currentForecast = json_decode(file_get_contents('https://api.forecast.io/forecast/' . $forecast_api . '/' . $weather_lat . ',' . $weather_long . $forecastExcludes));
+    $currentForecast = json_decode(file_get_contents('https://api.forecast.io/forecast/' . $forecast_api . '/' . $weather_lat . ',' . $weather_long . $forecastExcludes . '&units=' . $weather_units));
 
     $currentSummary = $currentForecast->currently->summary;
     $currentSummaryIcon = $currentForecast->currently->icon;
@@ -953,7 +956,13 @@ function makeWeatherSidebar()
     echo '</ul>';
     if ($currentWindSpeed > 0) {
         $direction = getDir($currentWindBearing);
-        echo '<h4 class="exoextralight" style="margin-top:0px">Wind: ' . $currentWindSpeed . ' mph from the ' . $direction . '</h4>';
+        if ($weather_units == si) {
+            echo '<h4 class="exoextralight" style="margin-top:0px">Wind: ' . $currentWindSpeed . ' m/s from the ' . $direction . '</h4>';
+        } else if ($weather_units != us and $weather_units != uk) {
+            echo '<h4 class="exoextralight" style="margin-top:0px">Wind: ' . $currentWindSpeed . ' km/h from the ' . $direction . '</h4>';
+        } else {
+            echo '<h4 class="exoextralight" style="margin-top:0px">Wind: ' . $currentWindSpeed . ' mph from the ' . $direction . '</h4>';
+        }
     } else {
         echo '<h4 class="exoextralight" style="margin-top:0px">Wind: Calm</h4>';
     }
