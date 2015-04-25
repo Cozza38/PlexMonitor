@@ -54,7 +54,9 @@ $timezone = $misc['timezone'];
 $apcupsd_path = $misc['apcupsd_path_to_bin'];
 
 // Timezone
+if ($timezone != ""){
 date_default_timezone_set($timezone);
+}
 
 // Disks
 $disk = $disks;
