@@ -50,7 +50,11 @@ $weather_lat = $misc['weather_lat'];
 $weather_long = $misc['weather_long'];
 $weather_name = $misc['weather_name'];
 $ping_ip = $misc['ping_ip'];
+$timezone = $misc['timezone'];
 $apcupsd_path = $misc['apcupsd_path_to_bin'];
+
+// Timezone
+date_default_timezone_set($timezone);
 
 // Disks
 $disk = $disks;
