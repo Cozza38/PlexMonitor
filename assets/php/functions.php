@@ -575,7 +575,11 @@ function makeRecentlyAdded()
     $mediaXML = simplexml_load_file($network . ':' . $plex_port . $mediaKey . '/?X-Plex-Token=' . $plexToken);
     $movieTitle = $mediaXML->Video['title'];
     $movieArt = $mediaXML->Video['thumb'];
-    echo '<img src="' . ($network . ':' . $plex_port . $movieArt . '/?X-Plex-Token=' . $plexToken) . '" alt="' . $movieTitle . '">';
+    if ($movieArt != null) {
+        echo '<img src="' . ($network . ':' . $plex_port . $movieArt . '/?X-Plex-Token=' . $plexToken) . '" alt="' . $movieTitle . '">';
+    } else {
+        echo '<img src="assets/img/placeholder.jpg">';
+    }
     echo '</div>'; // Close item div
     $i = 1;
     for (; ;) {
@@ -586,7 +590,11 @@ function makeRecentlyAdded()
         $movieArt = $mediaXML->Video['thumb'];
         $movieYear = $mediaXML->Video['year'];
         echo '<div class="item">';
-        echo '<img src="' . ($network . ':' . $plex_port . $movieArt . '/?X-Plex-Token=' . $plexToken) . '" alt="' . $movieTitle . '">';
+                if ($movieArt != null) {
+            echo '<img src="' . ($network . ':' . $plex_port . $movieArt . '/?X-Plex-Token=' . $plexToken) . '" alt="' . $movieTitle . '">';
+        } else {
+            echo '<img src="assets/img/placeholder.jpg">';
+        }
         //echo '<div class="carousel-caption">';
         //echo '<h3>'.$movieTitle.$movieYear.'</h3>';
         //echo '<p>Summary</p>';
