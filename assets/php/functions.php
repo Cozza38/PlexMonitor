@@ -556,51 +556,91 @@ function makeRecenlyReleased()
 
 function makeRecentlyAdded()
 {
-    // Various items are commented out as I was playing with what information to include.
     global $plex_port;
     global $plexToken;
     $network = getNetwork();
     $clientIP = get_client_ip();
     $plexNewestXML = simplexml_load_file($network . ':' . $plex_port . '/library/recentlyAdded/?X-Plex-Token=' . $plexToken);
-
-    //echo '<div class="col-md-10 col-sm-offset-1">';
-    echo '<div class="col-md-12">';
+    $plexNewestXML->registerXPathNamespace("a", XMLNS_SOAPENV);
+    echo '<div class="col-md-10 col-sm-offset-1">';
     echo '<div id="carousel-example-generic" class=" carousel slide">';
     echo '<div class="thumbnail">';
     echo '<!-- Wrapper for slides -->';
     echo '<div class="carousel-inner">';
     echo '<div class="item active">';
-    $mediaKey = $plexNewestXML->Video[0]['key'];
-    $mediaXML = simplexml_load_file($network . ':' . $plex_port . $mediaKey . '/?X-Plex-Token=' . $plexToken);
-    $movieTitle = $mediaXML->Video['title'];
-    $movieArt = $mediaXML->Video['thumb'];
-    echo '<img src="' . ($network . ':' . $plex_port . $movieArt . '/?X-Plex-Token=' . $plexToken) . '" alt="' . $movieTitle . '">';
-    echo '</div>'; // Close item div
-    $i = 1;
-    for (; ;) {
-        if ($i == 15) break;
-        $mediaKey = $plexNewestXML->Video[$i]['key'];
-        $mediaXML = simplexml_load_file($network . ':' . $plex_port . $mediaKey . '/?X-Plex-Token=' . $plexToken);
-        $movieTitle = $mediaXML->Video['title'];
-        $movieArt = $mediaXML->Video['thumb'];
-        $movieYear = $mediaXML->Video['year'];
-        echo '<div class="item">';
-        echo '<img src="' . ($network . ':' . $plex_port . $movieArt . '/?X-Plex-Token=' . $plexToken) . '" alt="' . $movieTitle . '">';
-        //echo '<div class="carousel-caption">';
-        //echo '<h3>'.$movieTitle.$movieYear.'</h3>';
-        //echo '<p>Summary</p>';
-        //echo '</div>';
-        echo '</div>'; // Close item div
+    // Determine if this is a Movie or TV Show and display the correct result
+    $i = 0;
+    foreach($plexNewestXML as $key => $media) {
+        if ( $media['type'] == 'season' ) {
+            $episodeParentKey = $media['parentKey'];
+            $episodeKey = $media['key'];
+            $seasonNumber = $media['title'];
+            $mediaXML = simplexml_load_file($network . ':' . $plex_port . $episodeParentKey . '/?X-Plex-Token=' . $plexToken);
+            $coverArt = $mediaXML->Directory['thumb'];
+            $showTitle = $mediaXML->Directory['title'];
+            $episodeXML = simplexml_load_file($network . ':' . $plex_port . $episodeKey . '/?X-Plex-Token=' . $plexToken);
+            $episodeXML->registerXPathNamespace("a", XMLNS_SOAPENV);
+            $lastEP = $episodeXML->Video[count($episodeXML->Video)-1];
+            $episodeNumber = $lastEP['index'];
+            // Truncated Summary
+            if (countWords($lastEP['summary']) < 51) {
+                $showSummary = $lastEP['summary'];
+            } else {
+                $showSummary = limitWords($lastEP['summary'], 50); // Limit to 50 words
+                $showSummary .= "...";
+            }
+            // Only open this div if it's not the first item
+            if ($i != 0 ) {
+                echo '<div class="item">';
+            }
+            // Display coverArt if we have it, otherwise use a placeholder
+            if ($coverArt != null) {
+                echo '<img src="' . ($network . ':' . $plex_port . $coverArt . '/?X-Plex-Token=' . $plexToken) . '" alt="' . $showTitle . '">';
+            } else {
+                echo '<img class="placeholderRecentlyAdded" src="assets/img/placeholder.jpg">';
+            }
+            // Display the show title with season info and summary
+            echo '<h3 class="exoextralight" style="margin-top:5px;">' . $showTitle . '</h3>';
+            echo '<h4 class="exoextralight" style="margin-top:5px;">' . $seasonNumber . ' - Episode ' . $episodeNumber . '</h4>';
+            echo '<p>' . $showSummary . '</p>';
+            echo '</div>';
+        } elseif ($media['type'] == 'movie' ) {
+            // It's a Movie!
+            $movieKey = $media['key'];
+            $mediaXML = simplexml_load_file($network . ':' . $plex_port . $movieKey . '/?X-Plex-Token=' . $plexToken);
+            $coverArt = $mediaXML->Video['thumb'];
+            $movieTitle = $mediaXML->Video['title'];
+            $movieYear = $mediaXML->Video['year'];
+            // Truncated Summary
+            if (countWords($mediaXML->Video['summary']) < 51) {
+                $movieSummary = $mediaXML->Video['summary'];
+            } else {
+                $movieSummary = limitWords($mediaXML->Video['summary'], 50); // Limit to 50 words
+                $movieSummary .= "...";
+            }
+            // Only open this div if it's not the first item
+            if ($i != 0 ) {
+                echo '<div class="item">';
+            }
+            // Display coverArt if we have it, otherwise use a placeholder
+            if ($coverArt != null) {
+                echo '<img src="' . ($network . ':' . $plex_port . $coverArt . '/?X-Plex-Token=' . $plexToken) . '" alt="' . $movieTitle . '">';
+            } else {
+                echo '<img class="placeholderRecentlyAdded" src="assets/img/placeholder.jpg">';
+            }
+            // // Display the movie title with year and summary
+            echo '<h3 class="exoextralight" style="margin-top:5px;">' . $movieTitle . ' (' . $movieYear . ')</h3>';
+            echo '<p>' . $movieSummary . '</p>';
+            echo '</div>';
+        }
         $i++;
     }
     echo '</div>'; // Close carousel-inner div
     echo '</div>'; // Close thumbnail div
     echo '<!-- Controls -->';
     echo '<a class="left carousel-control" href="#carousel-example-generic" data-slide="prev">';
-    //echo '<span class="glyphicon glyphicon-chevron-left"></span>';
     echo '</a>';
     echo '<a class="right carousel-control" href="#carousel-example-generic" data-slide="next">';
-    //echo '<span class="glyphicon glyphicon-chevron-right"></span>';
     echo '</a>';
     echo '</div>'; // Close carousel slide div
     echo '</div>'; // Close column div
