@@ -35,6 +35,7 @@ $trakt_username = $credentials['trakt_username'];
 // API Keys
 $forecast_api = $api_keys['forecast_api'];
 $sabnzbd_api = $api_keys['sabnzbd_api'];
+$trakt_api = $api_keys['trakt_api'];
 
 // SABnzbd+
 $sab_ip = $sabnzbd['sab_ip'];
@@ -456,50 +457,86 @@ function sabSpeedAdjuster()
     endif;
 }
 
-function makeRecenlyViewed()
+function getTraktHistory($traktUsername, $type)
 {
-    global $local_pfsense_ip;
-    global $plex_port;
-    global $plexToken;
+    global $trakt_api;
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL,
+        "https://api-v2launch.trakt.tv/users/{$traktUsername}/history/{$type}?extended=images");
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HEADER, false);
+
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        "Content-Type: application/json",
+        "trakt-api-version: 2",
+        "trakt-api-key: " . $trakt_api . ""
+    ));
+
+    $response = curl_exec($ch);
+
+    if ( $response )
+    {
+        curl_close($ch);
+
+        return json_decode($response);
+    }
+    else
+    {
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        return $error;
+    }
+}
+
+function makeRecentlyViewed()
+{
     global $trakt_username;
-    global $weather_lat;
-    global $weather_long;
-    global $weather_name;
     $network = getNetwork();
-    $clientIP = get_client_ip();
-    $plexSessionXML = simplexml_load_file($network . ':' . $plex_port . '/status/sessions/?X-Plex-Token=' . $plexToken);
-    $trakt_url = 'http://trakt.tv/user/' . $trakt_username . '/widgets/watched/all-tvthumb.jpg';
-    $traktThumb = '/assets/caches/thumbnails/all-tvthumb.jpg';
 
-    echo '<div class="col-md-12">';
-    echo '<a href="http://trakt.tv/user/' . $trakt_username . '" class="thumbnail">';
-    if (file_exists($traktThumb) && (filemtime($traktThumb) > (time() - 60 * 15))) {
-        // Trakt image is less than 15 minutes old.
-        // Don't refresh the image, just use the file as-is.
-        echo '<img src="' . $network . '/assets/caches/thumbnails/all-tvthumb.jpg" alt="trakt.tv" class="img-responsive"></a>';
-    } else {
-        // Either file doesn't exist or our cache is out of date,
-        // so check if the server has different data,
-        // if it does, load the data from our remote server and also save it over our cache for next time.
-        $thumbFromTrakt_md5 = md5_file($trakt_url);
-        $traktThumb_md5 = md5_file($traktThumb);
-        if ($thumbFromTrakt_md5 === $traktThumb_md5) {
-            echo '<img src="' . $network . '/assets/caches/thumbnails/all-tvthumb.jpg" alt="trakt.tv" class="img-responsive"></a>';
-        } else {
-            $thumbFromTrakt = file_get_contents($trakt_url);
-            file_put_contents($traktThumb, $thumbFromTrakt, LOCK_EX);
-            echo '<img src="' . $network . '/assets/caches/thumbnails/all-tvthumb.jpg" alt="trakt.tv" class="img-responsive"></a>';
-
-        }
-    }
-    // This checks to see if you are inside your local network. If you are it gives you the forecast as well.
-    if ($clientIP == $local_pfsense_ip && count($plexSessionXML->Video) == 0) {
-        echo '<hr>';
-        echo '<h1 class="exoextralight" style="margin-top:5px;">';
-        echo 'Forecast</h1>';
-        echo '<iframe id="forecast_embed" type="text/html" frameborder="0" height="245" width="100%" src="http://forecast.io/embed/#lat=' . $weather_lat . '&lon=' . $weather_long . '&name=' . $weather_name . '"> </iframe>';
-    }
+    // $traktMovieHistory = getTraktHistory($trakt_username, 'movies');
+    $traktEpisodeHistory = getTraktHistory($trakt_username, 'episodes');
+    echo '<div class="col-md-10 col-sm-offset-1">';
+    echo '<div id="carousel-example-generic" class=" carousel slide">';
+    echo '<div class="thumbnail">';
+    echo '<!-- Wrapper for slides -->';
+    echo '<div class="carousel-inner">';
+    echo '<div class="item active">';
+    $coverArt = $traktEpisodeHistory[0]->show->images->poster->full;
+    $showTitle = $traktEpisodeHistory[0]->show->title;
+    $seasonNumber = $traktEpisodeHistory[0]->episode->season;
+    $episodeNumber = $traktEpisodeHistory[0]->episode->number;
+    echo '<img src="' . $coverArt . '">';
+    echo '<h3 class="exoextralight" style="margin-top:5px;">' . $showTitle . '</h3>';
+    echo '<h4 class="exoextralight" style="margin-top:5px;">Season ' . $seasonNumber . ' - Episode ' . $episodeNumber . '</h4>';
+    echo '<a href="http://trakt.tv/user/' . $trakt_username . '">trakt.tv</a>';
     echo '</div>';
+    $i = 1;
+    for (; ;) {
+        if ($i == 10) break;
+        $coverArt = $traktEpisodeHistory[$i]->show->images->poster->full;
+        $showTitle = $traktEpisodeHistory[$i]->show->title;
+        $seasonNumber = $traktEpisodeHistory[$i]->episode->season;
+        $episodeNumber = $traktEpisodeHistory[$i]->episode->number;
+        echo '<div class="item">';
+        echo '<img src="' . $coverArt . '">';
+        echo '<h3 class="exoextralight" style="margin-top:5px;">' . $showTitle . '</h3>';
+        echo '<h4 class="exoextralight" style="margin-top:5px;">Season ' . $seasonNumber . ' - Episode ' . $episodeNumber . '</h4>';
+        echo '<a href="http://trakt.tv/user/' . $trakt_username . '">trakt.tv</a>';
+        echo '</div>';
+        $i++;
+    }
+    echo '</div>'; // Close carousel-inner div
+    echo '</div>'; // Close thumbnail div
+    echo '<!-- Controls -->';
+    echo '<a class="left carousel-control" href="#carousel-example-generic" data-slide="prev">';
+    echo '</a>';
+    echo '<a class="right carousel-control" href="#carousel-example-generic" data-slide="next">';
+    echo '</a>';
+    echo '</div>'; // Close carousel slide div
+    echo '</div>'; // Close column div
 }
 
 function makeRecenlyReleased()
