@@ -504,23 +504,16 @@ function makeRecentlyViewed()
     echo '<!-- Wrapper for slides -->';
     echo '<div class="carousel-inner">';
     echo '<div class="item active">';
-    $coverArt = $traktEpisodeHistory[0]->show->images->poster->full;
-    $showTitle = $traktEpisodeHistory[0]->show->title;
-    $seasonNumber = $traktEpisodeHistory[0]->episode->season;
-    $episodeNumber = $traktEpisodeHistory[0]->episode->number;
-    echo '<img src="' . $coverArt . '">';
-    echo '<h3 class="exoextralight" style="margin-top:5px;">' . $showTitle . '</h3>';
-    echo '<h4 class="exoextralight" style="margin-top:5px;">Season ' . $seasonNumber . ' - Episode ' . $episodeNumber . '</h4>';
-    echo '<a href="http://trakt.tv/user/' . $trakt_username . '">trakt.tv</a>';
-    echo '</div>';
-    $i = 1;
+    $i = 0;
     for (; ;) {
         if ($i == 10) break;
         $coverArt = $traktEpisodeHistory[$i]->show->images->poster->full;
         $showTitle = $traktEpisodeHistory[$i]->show->title;
         $seasonNumber = $traktEpisodeHistory[$i]->episode->season;
         $episodeNumber = $traktEpisodeHistory[$i]->episode->number;
+        if ($i != 0 ) {
         echo '<div class="item">';
+        }
         echo '<img src="' . $coverArt . '">';
         echo '<h3 class="exoextralight" style="margin-top:5px;">' . $showTitle . '</h3>';
         echo '<h4 class="exoextralight" style="margin-top:5px;">Season ' . $seasonNumber . ' - Episode ' . $episodeNumber . '</h4>';
